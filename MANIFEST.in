@@ -1,0 +1,3 @@
+include bbc2/serv/ethereum/contracts/BBcAnchor.sol
+include bbc2/serv/ethereum/tests/test_bbc_anchor.py
+include bbc2/serv/ethereum/scripts/bbc_anchor.py
