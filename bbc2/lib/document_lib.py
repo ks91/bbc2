@@ -28,6 +28,7 @@ import xml.etree.ElementTree as ET
 
 from bbc2.serv import logger
 from bbc2.lib import support_lib
+from bbc2.lib.support_lib import BYTELEN_BIT256
 from bbclib.libs import bbclib_binary
 from flask import current_app
 
@@ -109,7 +110,7 @@ def file(container):
     dat = bytearray()
     for e in container:
         if e.tag == 'digest':
-            digest = binascii.a2b_hex(e.text)
+            digest = bbclib.convert_idstring_to_bytes(e.text, BYTELEN_BIT256)
             dat.extend(digest)
         elif 'container' in e.attrib and e.attrib['container'] == 'true' \
                 and len(e) > 0:

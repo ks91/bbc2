@@ -4,7 +4,7 @@ from os import path
 from setuptools import setup
 from setuptools.command.install import install
 
-VERSION = "0.1"
+VERSION = "0.2"
 
 here = path.abspath(path.dirname(__file__))
 

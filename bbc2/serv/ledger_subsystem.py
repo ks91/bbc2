@@ -15,7 +15,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import bbclib
-import binascii
 import copy
 import hashlib
 import json
@@ -25,6 +24,7 @@ import threading
 import sys
 sys.path.extend(["../../"])
 from bbc2.lib import data_store_lib, support_lib
+from bbc2.lib.support_lib import BYTELEN_BIT256
 from bbc2.serv import logger
 from bbc2.serv.ethereum import bbc_ethereum
 
@@ -161,12 +161,15 @@ class LedgerSubsystem:
         digest = None
         if jTemp['left'] is not None:
             jTemp['right'] = jTemp['left']
-            msg = binascii.a2b_hex(jTemp['left'])
+            msg = bbclib.convert_idstring_to_bytes(jTemp['left'],
+                    bytelen=BYTELEN_BIT256)
             digest = hashlib.sha256(msg + msg).digest()
-            jTemp['digest'] = str(binascii.b2a_hex(digest), 'utf-8')
+            jTemp['digest'] = bbclib.convert_id_to_string(digest,
+                    bytelen=BYTELEN_BIT256)
             self.write_leaf(jTemp, digest=digest, left=msg, right=msg)
         elif jTemp['prev'] is not None:
-            digest = binascii.a2b_hex(jTemp['prev'])
+            digest = bbclib.convert_idstring_to_bytes(jTemp['prev'],
+                    bytelen=BYTELEN_BIT256)
         f = open(self.temp_file_dic, 'w')
         json.dump(temp_json, f, indent=2)
         f.close()
@@ -307,12 +310,16 @@ class LedgerSubsystem:
                 self.logger.debug("got message: %s" % msg)
                 digest = None
                 if jTemp['left'] is None:
-                    jTemp['left'] = str(binascii.b2a_hex(msg), 'utf-8')
+                    jTemp['left'] = bbclib.convert_id_to_string(msg,
+                            bytelen=BYTELEN_BIT256)
                 elif jTemp['right'] is None:
-                    jTemp['right'] = str(binascii.b2a_hex(msg), 'utf-8')
-                    target = binascii.a2b_hex(jTemp['left']) + msg
+                    jTemp['right'] = bbclib.convert_id_to_string(msg,
+                            bytelen=BYTELEN_BIT256)
+                    target = bbclib.convert_idstring_to_bytes(jTemp['left'],
+                            bytelen=BYTELEN_BIT256) + msg
                     digest = hashlib.sha256(target).digest()
-                    jTemp['digest'] = str(binascii.b2a_hex(digest), 'utf-8')
+                    jTemp['digest'] = bbclib.convert_id_to_string(digest,
+                            bytelen=BYTELEN_BIT256)
                 f = open(self.temp_file_dic, 'w')
                 json.dump(jTemp, f, indent=2)
                 f.close()
@@ -363,9 +370,9 @@ class LedgerSubsystem:
         while True:
             subtree.append({
                 'position': 'left' if row[0][2] == digest else 'right',
-                'digest': str(binascii.b2a_hex(
-                    row[0][1] if row[0][2] == digest else row[0][2]
-                ), 'utf-8')
+                'digest': bbclib.convert_id_to_string(
+                        row[0][1] if row[0][2] == digest else row[0][2],
+                        bytelen=BYTELEN_BIT256)
             })
             digest = row[0][0]
             row = self.db.exec_sql(
@@ -428,11 +435,13 @@ class LedgerSubsystem:
 
     def write_leaf(self, jTemp, digest=None, left=None, right=None):
         if digest is None:
-            digest = binascii.a2b_hex(jTemp['digest'])
+            digest = bbclib.convert_idstring_to_bytes(jTemp['digest'],
+                    bytelen=BYTELEN_BIT256)
         if jTemp['prev'] is None:
             prev = bytes()
         else:
-            prev = binascii.a2b_hex(jTemp['prev'])
+            prev = bbclib.convert_idstring_to_bytes(jTemp['prev'],
+                    bytelen=BYTELEN_BIT256)
         row = self.db.exec_sql(
             self.domain_id,
             NAME_OF_DB,
@@ -448,9 +457,11 @@ class LedgerSubsystem:
                 'insert into merkle_leaf_table values (?, ?, ?, ?)',
                 digest,
                 left if left is not None \
-                        else binascii.a2b_hex(jTemp['left']),
+                        else bbclib.convert_idstring_to_bytes(jTemp['left'],
+                        bytelen=BYTELEN_BIT256),
                 right if right is not None \
-                        else binascii.a2b_hex(jTemp['right']),
+                        else bbclib.convert_idstring_to_bytes(jTemp['right'],
+                        bytelen=BYTELEN_BIT256),
                 prev
             )
         jTemp['prev'] = jTemp['digest']
