@@ -15,7 +15,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import bbclib
-import binascii
 import hashlib
 import os
 
@@ -27,6 +26,16 @@ from bbc2.serv import logger
 
 
 DIR_APP_SUPPORT  = '.bbc2_app'
+
+
+BYTELEN_BIT256 = 256 // 8
+
+MAX_INT8  = 0x7f
+MAX_INT16 = 0x7fff
+MAX_INT32 = 0x7fffffff
+MAX_INT64 = 0x7fffffffffffffff
+
+O_BIT_NONE = 0
 
 
 def get_support_dir(domain_id):
@@ -41,7 +50,8 @@ def get_support_dir(domain_id):
         s_dir (str): The relative path of the application support directory.
 
     """
-    s_domain_id = binascii.b2a_hex(domain_id).decode()
+    s_domain_id = bbclib.convert_id_to_string(domain_id,
+            bytelen=BYTELEN_BIT256)
     s_dir = os.environ.get('BBC2_APP_SUPPORT_DIR', DIR_APP_SUPPORT) + '/' \
             + s_domain_id + '/'
     if not os.path.exists(s_dir):
@@ -61,28 +71,13 @@ def get_working_dir(domain_id):
         s_dir (str): The relative path of the working directory.
 
     """
-    s_domain_id = binascii.b2a_hex(domain_id).decode()
+    s_domain_id = bbclib.convert_id_to_string(domain_id,
+            bytelen=BYTELEN_BIT256)
     s_dir = os.environ.get('BBC2_WORKING_DIR', DEFAULT_WORKING_DIR) + '/' \
             + s_domain_id + '/'
     if not os.path.exists(s_dir):
         os.makedirs(s_dir, mode=0o777, exist_ok=True)
     return s_dir
-
-
-class Constants:
-
-    """Collection of constants to be used in the library or application.
-
-    Common constants are provided. Libraries or applications should derive
-    their own constant classes from this.
-    """
-
-    MAX_INT8  = 0x7f
-    MAX_INT16 = 0x7fff
-    MAX_INT32 = 0x7fffffff
-    MAX_INT64 = 0x7fffffffffffffff
-
-    O_BIT_NONE = 0
 
 
 # end of support_lib.py

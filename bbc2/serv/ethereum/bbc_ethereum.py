@@ -14,6 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import bbclib
 import binascii
 from brownie import *
 import hashlib
@@ -25,6 +26,7 @@ import time
 import sys
 sys.path.extend(["../../../"])
 from bbc2.serv import bbc_config
+from bbc2.lib.support_lib import BYTELEN_BIT256
 
 
 def chdir_to_core_path():
@@ -321,28 +323,31 @@ class BBcEthereum:
         return self.anchor.getStored(digest0)
 
 
-    def verify(self, digest, subtree):
+    def verify(self, digest, subtree, legacy=False):
         """Verifies whether the digest is included in the Merkle tree.
 
         Args:
             digest (bytes): The digest to test existence.
             subtree (list): The Merkle subtree to calculate the root.
+            legacy (bool):  Allows less than 32-byte representation of digests.
 
         Returns:
             block_number (int): The block number upon registration.
                 0 if not found.
         """
 
-        block_number, root = self.verify_and_get_root(digest, subtree)
+        block_number, root = self.verify_and_get_root(digest, subtree,
+                legacy=legacy)
         return block_number
 
 
-    def verify_and_get_root(self, digest, subtree):
+    def verify_and_get_root(self, digest, subtree, legacy=False):
         """Verifies whether the digest is included in the Merkle tree.
 
         Args:
             digest (bytes): The digest to test existence.
             subtree (list): The Merkle subtree to calculate the root.
+            legacy (bool):  Allows less than 32-byte representation of digests.
 
         Returns:
             block_number (int): The block number upon registration.
@@ -350,26 +355,51 @@ class BBcEthereum:
             root (bytes): The Merkle root
         """
 
-        for dic in subtree:
-            if 'digest' in dic:
-                digest0 = binascii.a2b_hex(dic['digest'])
-                if dic['position'] == 'right':
-                    dLeft = digest
-                    dRight = digest0
-                else:
-                    dLeft = digest0
-                    dRight = digest
-                digest = hashlib.sha256(dLeft + dRight).digest()
+        if legacy:
+            for dic in subtree:
+                if 'digest' in dic:
+                    digest0 = binascii.a2b_hex(dic['digest'])
+                    if dic['position'] == 'right':
+                        dLeft = digest
+                        dRight = digest0
+                    else:
+                        dLeft = digest0
+                        dRight = digest
+                    digest = hashlib.sha256(dLeft + dRight).digest()
 
-            else:
-                digest0 = binascii.a2b_hex(dic[b'digest'].decode())
-                if dic[b'position'] == b'right':
-                    dLeft = digest
-                    dRight = digest0
                 else:
-                    dLeft = digest0
-                    dRight = digest
-                digest = hashlib.sha256(dLeft + dRight).digest()
+                    digest0 = binascii.a2b_hex(dic[b'digest'].decode())
+                    if dic[b'position'] == b'right':
+                        dLeft = digest
+                        dRight = digest0
+                    else:
+                        dLeft = digest0
+                        dRight = digest
+                    digest = hashlib.sha256(dLeft + dRight).digest()
+
+        else:
+            for dic in subtree:
+                if 'digest' in dic:
+                    digest0 = bbclib.convert_idstring_to_bytes(dic['digest'],
+                            bytelen=BYTELEN_BIT256)
+                    if dic['position'] == 'right':
+                        dLeft = digest
+                        dRight = digest0
+                    else:
+                        dLeft = digest0
+                        dRight = digest
+                    digest = hashlib.sha256(dLeft + dRight).digest()
+
+                else:
+                    digest0 = bbclib.convert_idstring_to_bytes(
+                            dic[b'digest'].decode(), bytelen=BYTELEN_BIT256)
+                    if dic[b'position'] == b'right':
+                        dLeft = digest
+                        dRight = digest0
+                    else:
+                        dLeft = digest0
+                        dRight = digest
+                    digest = hashlib.sha256(dLeft + dRight).digest()
 
         return self.test(digest), digest
 

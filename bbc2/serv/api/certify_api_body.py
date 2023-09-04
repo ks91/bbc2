@@ -28,9 +28,10 @@ import time
 import xml.etree.ElementTree as ET
 
 import bbc2
-from bbc2.serv import bbc_config, service
+from bbc2.serv import bbc_config, service, logger
 from bbc2.serv.ethereum import bbc_ethereum
 from bbc2.lib import document_lib
+from bbc2.lib.support_lib import BYTELEN_BIT256
 
 from brownie import *
 from flask import Blueprint, request, abort, jsonify, g, current_app
@@ -119,7 +120,8 @@ def get_digest():
     else:
         abort_by_bad_json_format()
 
-    return jsonify({'digest': binascii.b2a_hex(digest).decode()})
+    return jsonify({'digest': bbclib.convert_id_to_string(digest,
+            bytelen=BYTELEN_BIT256)})
 
 
 # For testing and demonstration purposes only.
@@ -231,7 +233,17 @@ def verify_certificate():
 
     digest = hashlib.sha256(document.file()).digest()
 
-    block_no, root = eth.verify_and_get_root(digest, subtree)
+    legacy = False
+    block_no, root = eth.verify_and_get_root(digest, subtree, legacy=False)
+
+    if block_no <= 0:
+        legacy = True
+        try:
+            current_app.logger.info('certify: legacy tried: {0}'.format(
+                    binascii.b2a_hex(digest).decode()))
+        except RunTimeError:
+            pass
+        block_no, root = eth.verify_and_get_root(digest, subtree, legacy=True)
 
     if block_no <= 0:
         abort_by_merkle_root_not_found()
@@ -242,7 +254,9 @@ def verify_certificate():
         'network': spec['network'],
         'contract_address': spec['contract_address'],
         'block': block_no,
-        'root': binascii.b2a_hex(root).decode(),
+        'root': binascii.b2a_hex(root).decode() if legacy \
+                else bbclib.convert_id_to_string(root,
+                bytelen=BYTELEN_BIT256),
         'time': block['timestamp']
     })
 
