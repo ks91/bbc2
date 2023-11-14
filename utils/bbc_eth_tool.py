@@ -48,8 +48,8 @@ class EthereumSubsystemTool(subsystem_tool_lib.SubsystemTool):
 
     def _add_additional_arguments(self):
         self.argparser.add_argument('-n', '--network', type=str,
-                default='goerli',
-                help='network name (goerli by default)')
+                default='',
+                help='network name')
 
         # account command
         parser = self.subparsers.add_parser('account',
@@ -80,6 +80,14 @@ class EthereumSubsystemTool(subsystem_tool_lib.SubsystemTool):
         # new_account command
         parser = self.subparsers.add_parser('new_account',
                 help='Create a new Ethereum account')
+
+        # set_default_network command
+        parser = self.subparsers.add_parser('set_default_network',
+                help='Set default network with -n option')
+
+        # set_default_network command
+        parser = self.subparsers.add_parser('show_default_network',
+                help='Show default network')
 
         # brownie command
         parser = self.subparsers.add_parser('brownie',
@@ -138,6 +146,12 @@ if __name__ == '__main__':
 
     elif args.command_type == 'brownie':
         bbc_ethereum.setup_brownie(bbcConfig, args.project_id)
+
+    elif args.command_type == 'show_default_network':
+        print(bbcConfig.get_config()['ethereum']['default_network'])
+
+    elif args.command_type == 'set_default_network':
+        bbc_ethereum.setup_default_network(bbcConfig, args.network)
 
     elif args.command_type == 'test':
         bbc_ethereum.setup_test()

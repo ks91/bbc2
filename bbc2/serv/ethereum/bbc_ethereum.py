@@ -29,6 +29,9 @@ from bbc2.serv import bbc_config
 from bbc2.lib.support_lib import BYTELEN_BIT256
 
 
+DEFAULT_NETWORK = 'goerli'
+
+
 def chdir_to_core_path():
     prevdir = chdir_to_this_filepath()
     os.chdir('..')
@@ -94,7 +97,7 @@ def setup_brownie(bbcConfig, infura_project_id):
     Args:
         bbcConfig (BBcConfig): The configuration object.
         infura_project_id (str): INFURA project ID.
-            To be used for setting up 'goerli' and 'mainnet' networks.
+            To be used for setting up testnets and 'mainnet' networks.
 
     """
     config = bbcConfig.get_config()
@@ -130,15 +133,25 @@ def setup_config(working_dir, file_name, network_name):
 
     if not 'ethereum' in config or not 'network' in config['ethereum']:
         config['ethereum'] = {
-            'network': network_name,
+            'network': network_name if network_name != '' else DEFAULT_NETWORK,
             'private_key': '',
             'contract_address': '',
             'web3_infura_project_id': '',
+            'default_network': DEFAULT_NETWORK,
         }
         isUpdated = True
 
-    elif config['ethereum']['network'] != network_name:
+    elif network_name != '' and config['ethereum']['network'] != network_name:
         config['ethereum']['network'] = network_name
+        isUpdated = True
+
+    elif network_name == '' and config['ethereum']['network'] \
+            != config['ethereum']['default_network']:
+        config['ethereum']['network'] = config['ethereum']['default_network']
+        isUpdated = True
+
+    if not 'default_network' in config['ethereum']:
+        config['ethereum']['default_network'] = DEFAULT_NETWORK
         isUpdated = True
 
     if isUpdated:
@@ -147,6 +160,26 @@ def setup_config(working_dir, file_name, network_name):
     os.chdir(prevdir)
 
     return bbcConfig
+
+
+def setup_default_network(bbcConfig, default_network_name):
+    """Sets brownie default network.
+
+    Args:
+        bbcConfig (BBcConfig): The configuration object.
+        default_network_name (str): The name of the brownie default network.
+
+    """
+
+    prevdir = chdir_to_this_filepath()
+
+    config = bbcConfig.get_config()
+
+    config['ethereum']['network'] = default_network_name
+    config['ethereum']['default_network'] = default_network_name
+
+    bbcConfig.update_config()
+    os.chdir(prevdir)
 
 
 def setup_deploy(bbcConfig):
