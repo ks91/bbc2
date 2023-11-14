@@ -133,10 +133,6 @@ if __name__ == '__main__':
     bbcConfig = bbc_ethereum.setup_config(args.workingdir, args.config,
             args.network)
 
-    if args.network == '':
-        args.network = bbcConfig.get_config()['ethereum']['default_network']
-        bbcConfig.get_config()['ethereum']['network'] = args.network
-
     if args.command_type == 'auto':
         print("Setting up brownie.")
         bbc_ethereum.setup_brownie(bbcConfig, args.project_id)

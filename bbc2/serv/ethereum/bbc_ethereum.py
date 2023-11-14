@@ -133,7 +133,7 @@ def setup_config(working_dir, file_name, network_name):
 
     if not 'ethereum' in config or not 'network' in config['ethereum']:
         config['ethereum'] = {
-            'network': network_name,
+            'network': network_name if network_name != '' else DEFAULT_NETWORK,
             'private_key': '',
             'contract_address': '',
             'web3_infura_project_id': '',
@@ -141,12 +141,18 @@ def setup_config(working_dir, file_name, network_name):
         }
         isUpdated = True
 
-    elif config['ethereum']['network'] != network_name:
+    elif network_name != '' and config['ethereum']['network'] != network_name:
         config['ethereum']['network'] = network_name
+        isUpdated = True
+
+    elif network_name == '' and config['ethereum']['network'] \
+            != config['ethereum']['default_network']:
+        config['ethereum']['network'] = config['ethereum']['default_network']
         isUpdated = True
 
     if not 'default_network' in config['ethereum']:
         config['ethereum']['default_network'] = DEFAULT_NETWORK
+        isUpdated = True
 
     if isUpdated:
         bbcConfig.update_config()
