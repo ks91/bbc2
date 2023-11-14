@@ -135,6 +135,7 @@ if __name__ == '__main__':
 
     if args.network == '':
         args.network = bbcConfig.get_config()['ethereum']['default_network']
+        bbcConfig.get_config()['ethereum']['network'] = args.network
 
     if args.command_type == 'auto':
         print("Setting up brownie.")
