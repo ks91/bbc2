@@ -29,7 +29,7 @@ from flask import Flask
 
 
 app = Flask(__name__)
-app.config['JSON_SORT_KEYS'] = False
+app.json.sort_keys = False
 
 
 from bbc2.serv.api.bbc_api_body import bbc_api
