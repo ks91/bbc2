@@ -248,7 +248,7 @@ def verify_certificate():
     if block_no <= 0:
         abort_by_merkle_root_not_found()
 
-    block = network.web3.eth.getBlock(block_no)
+    block = network.web3.eth.get_block(block_no)
 
     return jsonify({
         'network': spec['network'],
